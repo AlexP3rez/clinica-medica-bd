@@ -55,10 +55,34 @@ async function getAnalisisAvanzado(_req, res) {
   }
 }
 
+async function getAgendaDiaria(req, res) {
+  try {
+    const { fecha } = req.query;
+    const targetDate = fecha || new Date().toISOString().slice(0, 10);
+    const data = await pgService.query('SELECT * FROM v_agenda_diaria WHERE fecha = $1 ORDER BY hora', [targetDate]);
+    return res.status(200).json({ success: true, data: data.rows, error: null });
+  } catch (err) {
+    console.error(`[${new Date().toISOString()}] Error getAgendaDiaria:`, err.message);
+    return res.status(500).json({ success: false, data: null, error: err.message });
+  }
+}
+
+async function getFacturasPendientesReporte(_req, res) {
+  try {
+    const data = await pgService.getFacturasPendientes();
+    return res.status(200).json({ success: true, data, error: null });
+  } catch (err) {
+    console.error(`[${new Date().toISOString()}] Error getFacturasPendientesReporte:`, err.message);
+    return res.status(500).json({ success: false, data: null, error: err.message });
+  }
+}
+
 module.exports = {
   getRankingMedicos,
   getFacturacionMensual,
   getTopDiagnosticos,
   getMedicamentosPorEspecialidad,
   getAnalisisAvanzado,
+  getAgendaDiaria,
+  getFacturasPendientesReporte,
 };

@@ -41,13 +41,13 @@ export default function FacturacionMensual() {
                 <tr key={i} className="border-b dark:border-gray-700 last:border-0">
                   <td className="px-4 py-2.5 text-gray-900 dark:text-gray-100 font-medium">{row.mes || '-'}</td>
                   <td className="px-4 py-2.5 text-right text-gray-900 dark:text-gray-100">
-                    ${parseFloat(row.total_facturado || 0).toLocaleString('es-ES', { minimumFractionDigits: 2 })}
+                    Q{parseFloat(row.total_facturado || 0).toLocaleString('es-ES', { minimumFractionDigits: 2 })}
                   </td>
                   <td className="px-4 py-2.5 text-right text-green-700 dark:text-green-400">
-                    ${parseFloat(row.total_pagado || 0).toLocaleString('es-ES', { minimumFractionDigits: 2 })}
+                    Q{parseFloat(row.total_pagado || 0).toLocaleString('es-ES', { minimumFractionDigits: 2 })}
                   </td>
                   <td className="px-4 py-2.5 text-right text-red-600 dark:text-red-400">
-                    ${parseFloat(row.pendiente || 0).toLocaleString('es-ES', { minimumFractionDigits: 2 })}
+                    Q{parseFloat(row.pendiente || 0).toLocaleString('es-ES', { minimumFractionDigits: 2 })}
                   </td>
                 </tr>
               ))}

@@ -1,38 +1,60 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getHistorialPorPaciente } from '../../api/historiales.api';
+import { getPacientes } from '../../api/maestros.api';
 import Alert from '../../components/Alert';
 import Loading from '../../components/Loading';
 import EmptyState from '../../components/EmptyState';
-
-const inputClass = 'flex-1 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none';
-const labelClass = 'block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1';
+import SelectField from '../../components/SelectField';
 
 export default function HistorialPaciente() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [pacienteId, setPacienteId] = useState(id || '');
   const [searchId, setSearchId] = useState(id || '');
+  const [inicial, setInicial] = useState(!!id);
+  const [loading, setLoading] = useState(!!id);
   const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [searched, setSearched] = useState(!!id);
+  const [pacientes, setPacientes] = useState([]);
 
-  const handleSearch = async (e) => {
+  useEffect(() => {
+    getPacientes()
+      .then((res) => setPacientes(res.data))
+      .catch((err) => setError(err.message));
+  }, []);
+
+  useEffect(() => {
+    if (id && inicial) {
+      getHistorialPorPaciente(parseInt(id, 10))
+        .then((res) => {
+          setData(res.data);
+          setPacienteId(id);
+        })
+        .catch((err) => setError(err.message))
+        .finally(() => setLoading(false));
+    }
+  }, [id, inicial]);
+
+  const handleSubmit = (e) => {
     e.preventDefault();
-    setError(null);
-    setData(null);
-    setLoading(true);
-    try {
-      const res = await getHistorialPorPaciente(parseInt(searchId, 10));
-      setData(res.data);
-      if (searchId !== id) navigate(`/historiales/paciente/${searchId}`, { replace: true });
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-      setSearched(true);
+    if (searchId) {
+      setLoading(true);
+      setError(null);
+      setData(null);
+      setInicial(false);
+      navigate(`/historiales/paciente/${searchId}`, { replace: true });
+      getHistorialPorPaciente(parseInt(searchId, 10))
+        .then((res) => {
+          setData(res.data);
+          setPacienteId(searchId);
+        })
+        .catch((err) => setError(err.message))
+        .finally(() => setLoading(false));
     }
   };
+
+  if (loading && inicial) return <Loading />;
 
   return (
     <div className="max-w-3xl">
@@ -40,79 +62,72 @@ export default function HistorialPaciente() {
 
       <Alert type="error" message={error} onClose={() => setError(null)} />
 
-      <form onSubmit={handleSearch} className="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-xl p-4 mb-6">
-        <div>
-          <label className={labelClass}>Paciente ID</label>
-          <div className="flex gap-2">
-            <input type="number" min="1" required value={searchId}
-              onChange={(e) => setSearchId(e.target.value)} className={inputClass} />
-            <button type="submit" disabled={loading}
-              className="bg-blue-600 text-white py-2 px-6 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors">
-              Buscar
-            </button>
+      <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-xl p-6 space-y-4 mb-6">
+        <div className="flex gap-2 items-end">
+          <div className="flex-1">
+            <SelectField
+              label="Paciente"
+              value={searchId}
+              onChange={(e) => setSearchId(e.target.value)}
+              options={pacientes.map((p) => ({
+                value: p.id,
+                label: `${p.nombres} ${p.apellidos} (DPI: ${p.dpi})`,
+              }))}
+              placeholder="Seleccionar paciente..."
+              required
+            />
           </div>
+          <button type="submit" disabled={!searchId}
+            className="bg-blue-600 text-white py-2.5 px-6 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors h-[42px]">
+            Buscar
+          </button>
         </div>
       </form>
 
-      {loading && <Loading />}
+      {loading && !inicial && <Loading />}
 
-      {searched && data && (
+      {data && (
         data.length === 0 ? (
-          <EmptyState message="No se encontraron historiales para este paciente" />
+          <EmptyState message={`No se encontraron historiales para el paciente #${pacienteId}`} />
         ) : (
           <div className="space-y-4">
-            {data.map((hist, i) => (
+            <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              {data.length} consulta(s) encontrada(s) para paciente #{pacienteId}
+            </h3>
+            {data.map((row, i) => (
               <div key={i} className="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-xl p-5">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-sm font-semibold text-purple-700 dark:text-purple-400">{hist.especialidad}</span>
-                  <span className="text-xs text-gray-400 dark:text-gray-500">
-                    {new Date(hist.fecha_consulta).toLocaleDateString('es-ES', {
-                      year: 'numeric', month: 'long', day: 'numeric',
-                    })}
-                  </span>
-                </div>
-
-                {hist.datos_base && (
-                  <div className="mb-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg text-sm">
-                    <p className="text-gray-600 dark:text-gray-300 mb-1">
-                      <strong>Motivo:</strong> {hist.datos_base.motivo_consulta}
+                <div className="flex justify-between items-start mb-3">
+                  <div>
+                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{row.especialidad}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      {new Date(row.fecha_consulta).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                     </p>
-                    {hist.datos_base.signos_vitales && (
-                      <div className="grid grid-cols-3 gap-2 text-xs text-gray-500 dark:text-gray-400 mt-2">
-                        <span>PA: {hist.datos_base.signos_vitales.presion_arterial_sistolica}/{hist.datos_base.signos_vitales.presion_arterial_diastolica}</span>
-                        <span>FC: {hist.datos_base.signos_vitales.frecuencia_cardiaca} lpm</span>
-                        <span>Temp: {hist.datos_base.signos_vitales.temperatura}°C</span>
-                        <span>Peso: {hist.datos_base.signos_vitales.peso_kg} kg</span>
-                      </div>
+                  </div>
+                </div>
+                {row.datos_base && (
+                  <div className="text-sm text-gray-700 dark:text-gray-300 space-y-1 mb-3">
+                    <p><span className="font-medium">Motivo:</span> {row.datos_base.motivo_consulta}</p>
+                    {row.datos_base.signos_vitales && (
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        Presión: {row.datos_base.signos_vitales.presion_arterial_sistolica}/{row.datos_base.signos_vitales.presion_arterial_diastolica} | FC: {row.datos_base.signos_vitales.frecuencia_cardiaca} | Temp: {row.datos_base.signos_vitales.temperatura}°C | Peso: {row.datos_base.signos_vitales.peso_kg}kg
+                      </p>
                     )}
                   </div>
                 )}
-
-                {hist.diagnosticos?.length > 0 && (
+                {row.diagnosticos && row.diagnosticos.length > 0 && (
                   <div className="mb-2">
-                    <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Diagnosticos</span>
-                    <ul className="mt-1 space-y-1">
-                      {hist.diagnosticos.map((d, j) => (
-                        <li key={j} className="text-sm text-gray-700 dark:text-gray-300 flex items-center gap-2">
-                          <span className="bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 text-xs px-1.5 py-0.5 rounded font-mono">{d.codigo_cie10}</span>
-                          {d.descripcion}
-                          <span className="text-xs text-gray-400 dark:text-gray-500">({d.tipo})</span>
-                        </li>
-                      ))}
-                    </ul>
+                    <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Diagnósticos:</span>
+                    {row.diagnosticos.map((d, j) => (
+                      <span key={j} className="ml-2 inline-block px-2 py-0.5 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 rounded text-xs">{d.descripcion}</span>
+                    ))}
                   </div>
                 )}
-
-                {hist.medicamentos_recetados?.length > 0 && (
-                  <div className="mb-2">
-                    <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Medicamentos</span>
-                    <ul className="mt-1 space-y-1">
-                      {hist.medicamentos_recetados.map((m, j) => (
-                        <li key={j} className="text-sm text-gray-700 dark:text-gray-300">
-                          {m.nombre} — {m.dosis}, {m.frecuencia}, {m.duracion_dias} dias
-                        </li>
-                      ))}
-                    </ul>
+                {row.medicamentos_recetados && row.medicamentos_recetados.length > 0 && (
+                  <div>
+                    <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Medicamentos:</span>
+                    {row.medicamentos_recetados.map((m, j) => (
+                      <span key={j} className="ml-2 inline-block px-2 py-0.5 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 rounded text-xs">{m.nombre} ({m.dosis})</span>
+                    ))}
                   </div>
                 )}
               </div>

@@ -70,4 +70,54 @@ async function getHorariosLibres(req, res) {
   }
 }
 
-module.exports = { crearCita, cancelarCita, getHorariosLibres };
+async function getCitas(req, res) {
+  try {
+    const { fecha, estado, paciente_id } = req.query;
+    const data = await pgService.getCitas(
+      fecha || null,
+      estado || null,
+      paciente_id ? parseInt(paciente_id, 10) : null
+    );
+    return res.status(200).json({ success: true, data, error: null });
+  } catch (err) {
+    console.error(`[${new Date().toISOString()}] Error getCitas:`, err.message);
+    return res.status(500).json({ success: false, data: null, error: err.message });
+  }
+}
+
+async function getCitaById(req, res) {
+  try {
+    const cita = await pgService.getCitaById(parseInt(req.params.id, 10));
+    if (!cita) {
+      return res.status(404).json({ success: false, data: null, error: 'Cita no encontrada' });
+    }
+    return res.status(200).json({ success: true, data: cita, error: null });
+  } catch (err) {
+    console.error(`[${new Date().toISOString()}] Error getCitaById:`, err.message);
+    return res.status(500).json({ success: false, data: null, error: err.message });
+  }
+}
+
+async function cambiarEstadoCita(req, res) {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ success: false, data: null, error: errors.array() });
+  }
+
+  const cita_id = parseInt(req.params.id, 10);
+  const { estado, usuario } = req.body;
+
+  try {
+    await pgService.cambiarEstadoCita(cita_id, estado, usuario || 'sistema');
+    return res.status(200).json({
+      success: true,
+      data: { cita_id, estado, mensaje: `Cita actualizada a estado "${estado}" exitosamente` },
+      error: null,
+    });
+  } catch (err) {
+    console.error(`[${new Date().toISOString()}] Error cambiarEstadoCita:`, err.message);
+    return res.status(400).json({ success: false, data: null, error: err.message });
+  }
+}
+
+module.exports = { crearCita, cancelarCita, getHorariosLibres, getCitas, getCitaById, cambiarEstadoCita };

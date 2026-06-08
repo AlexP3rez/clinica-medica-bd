@@ -31,18 +31,20 @@ export default function RankingMedicos() {
             <thead className="bg-gray-50 dark:bg-gray-700 border-b dark:border-gray-600">
               <tr>
                 <th className="text-left px-4 py-3 font-medium text-gray-600 dark:text-gray-400">#</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600 dark:text-gray-400">Medico</th>
+                <th className="text-left px-4 py-3 font-medium text-gray-600 dark:text-gray-400">Médico</th>
+                <th className="text-left px-4 py-3 font-medium text-gray-600 dark:text-gray-400">Especialidad</th>
                 <th className="text-right px-4 py-3 font-medium text-gray-600 dark:text-gray-400">Citas</th>
-                <th className="text-right px-4 py-3 font-medium text-gray-600 dark:text-gray-400">Puntaje</th>
+                <th className="text-right px-4 py-3 font-medium text-gray-600 dark:text-gray-400">Facturado</th>
               </tr>
             </thead>
             <tbody>
               {data.map((row, i) => (
                 <tr key={i} className="border-b dark:border-gray-700 last:border-0">
                   <td className="px-4 py-2.5 text-gray-400 dark:text-gray-500">{i + 1}</td>
-                  <td className="px-4 py-2.5 text-gray-900 dark:text-gray-100 font-medium">{row.nombre || row.medico_id}</td>
-                  <td className="px-4 py-2.5 text-right text-gray-900 dark:text-gray-100">{row.total_citas || '-'}</td>
-                  <td className="px-4 py-2.5 text-right text-gray-900 dark:text-gray-100">{row.puntaje || '-'}</td>
+                  <td className="px-4 py-2.5 text-gray-900 dark:text-gray-100 font-medium">{row.medico}</td>
+                  <td className="px-4 py-2.5 text-gray-600 dark:text-gray-400">{row.especialidad}</td>
+                  <td className="px-4 py-2.5 text-right text-gray-900 dark:text-gray-100">{row.total_citas_atendidas || '-'}</td>
+                  <td className="px-4 py-2.5 text-right text-emerald-600 dark:text-emerald-400 font-medium">Q{parseFloat(row.monto_facturado || 0).toLocaleString('es-ES', { minimumFractionDigits: 2 })}</td>
                 </tr>
               ))}
             </tbody>

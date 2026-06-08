@@ -3,7 +3,7 @@
 **Proyecto Final — Bases de Datos III**
 **Autores:** Carlos Rodrigo Díaz Camposeco, Bryan Alexander Pérez Santos
 
-El presente documento detalla el uso estratégico de asistentes de Inteligencia Artificial (Gemini / Claude Code) durante el desarrollo de este proyecto, cumpliendo con los lineamientos de transparencia y uso responsable establecidos en la rúbrica. El código core de bases de datos (vistas, funciones, stored procedures y triggers) fue desarrollado y comprendido por nosotros, utilizando la IA principalmente como herramienta de apoyo, depuración y simulación.
+El presente documento detalla el uso estratégico de asistentes de Inteligencia Artificial (Gemini / OpenCode) durante el desarrollo de este proyecto, cumpliendo con los lineamientos de transparencia y uso responsable establecidos en la rúbrica. El código core de bases de datos (vistas, funciones, stored procedures y triggers) fue desarrollado y comprendido por nosotros, utilizando la IA principalmente como herramienta de apoyo, depuración y simulación.
 
 ## 1. Estrategia de Respaldo y Disaster Recovery (PostgreSQL & Docker)
 

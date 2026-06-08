@@ -8,6 +8,13 @@ const NAV = [
     items: [{ label: 'Inicio', to: '/' }],
   },
   {
+    label: 'Maestros',
+    items: [
+      { label: 'Médicos', to: '/medicos' },
+      { label: 'Pacientes', to: '/pacientes' },
+    ],
+  },
+  {
     label: 'Citas',
     items: [
       { label: 'Nueva cita', to: '/citas/nueva' },
@@ -26,17 +33,19 @@ const NAV = [
     label: 'Historiales',
     items: [
       { label: 'Nuevo historial', to: '/historiales/nuevo' },
-      { label: 'Buscar paciente', to: '/historiales/paciente/1' },
+      { label: 'Buscar paciente', to: '/historiales/paciente' },
     ],
   },
   {
     label: 'Reportes',
     items: [
-      { label: 'Ranking medicos', to: '/reportes/ranking' },
-      { label: 'Facturacion mensual', to: '/reportes/facturacion' },
-      { label: 'Top diagnosticos', to: '/reportes/diagnosticos' },
+      { label: 'Agenda diaria', to: '/reportes/agenda' },
+      { label: 'Facturas pendientes', to: '/reportes/facturas-pendientes' },
+      { label: 'Ranking médicos', to: '/reportes/ranking' },
+      { label: 'Facturación mensual', to: '/reportes/facturacion' },
+      { label: 'Top diagnósticos', to: '/reportes/diagnosticos' },
       { label: 'Medicamentos', to: '/reportes/medicamentos' },
-      { label: 'Analisis avanzado', to: '/reportes/analisis' },
+      { label: 'Análisis avanzado', to: '/reportes/analisis' },
     ],
   },
 ];
@@ -64,7 +73,7 @@ export default function Layout({ children }) {
       >
         <div className="h-16 flex items-center px-6 border-b border-gray-200 dark:border-gray-700">
           <Link to="/" className="text-lg font-bold text-blue-600 dark:text-blue-400">
-            Clinica API
+            Clínica API
           </Link>
         </div>
         <nav className="flex-1 overflow-y-auto p-4 space-y-6">
@@ -110,7 +119,7 @@ export default function Layout({ children }) {
             </svg>
           </button>
           <h1 className="text-lg font-semibold text-gray-800 dark:text-gray-100 truncate flex-1">
-            {NAV.flatMap((s) => s.items).find((i) => i.to === location.pathname)?.label || 'Clinica API'}
+            {NAV.flatMap((s) => s.items).find((i) => i.to === location.pathname)?.label || 'Clínica API'}
           </h1>
 
           {/* Dark mode toggle */}

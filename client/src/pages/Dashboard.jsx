@@ -2,6 +2,15 @@ import { Link } from 'react-router-dom';
 
 const CARDS = [
   {
+    title: 'Maestros',
+    description: 'Gestionar médicos y pacientes del sistema',
+    links: [
+      { label: 'Médicos', to: '/medicos' },
+      { label: 'Pacientes', to: '/pacientes' },
+    ],
+    color: 'indigo',
+  },
+  {
     title: 'Citas',
     description: 'Crear, cancelar y consultar horarios disponibles',
     links: [
@@ -21,29 +30,30 @@ const CARDS = [
     color: 'emerald',
   },
   {
-    title: 'Historiales Clinicos',
-    description: 'Crear y consultar historiales clinicos (MongoDB)',
+    title: 'Historiales Clínicos',
+    description: 'Crear y consultar historiales clínicos (MongoDB)',
     links: [
       { label: 'Nuevo historial', to: '/historiales/nuevo' },
-      { label: 'Buscar paciente', to: '/historiales/paciente/1' },
+      { label: 'Buscar paciente', to: '/historiales/paciente' },
     ],
     color: 'purple',
   },
   {
     title: 'Reportes',
-    description: 'Ranking de medicos, facturacion, diagnosticos y mas',
+    description: 'Agenda, facturación, ranking, diagnósticos y más',
     links: [
-      { label: 'Ranking medicos', to: '/reportes/ranking' },
-      { label: 'Facturacion mensual', to: '/reportes/facturacion' },
-      { label: 'Top diagnosticos', to: '/reportes/diagnosticos' },
-      { label: 'Medicamentos', to: '/reportes/medicamentos' },
-      { label: 'Analisis avanzado', to: '/reportes/analisis' },
+      { label: 'Agenda diaria', to: '/reportes/agenda' },
+      { label: 'Facturas pendientes', to: '/reportes/facturas-pendientes' },
+      { label: 'Ranking médicos', to: '/reportes/ranking' },
+      { label: 'Facturación mensual', to: '/reportes/facturacion' },
+      { label: 'Top diagnósticos', to: '/reportes/diagnosticos' },
     ],
     color: 'amber',
   },
 ];
 
 const colorMap = {
+  indigo: 'border-indigo-200 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-950',
   blue: 'border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950',
   emerald: 'border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950',
   purple: 'border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-950',
@@ -51,6 +61,7 @@ const colorMap = {
 };
 
 const colorDarkText = {
+  indigo: 'dark:text-indigo-300',
   blue: 'dark:text-blue-300',
   emerald: 'dark:text-emerald-300',
   purple: 'dark:text-purple-300',
@@ -58,6 +69,7 @@ const colorDarkText = {
 };
 
 const linkColorMap = {
+  indigo: 'text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/40',
   blue: 'text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/40',
   emerald: 'text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/40',
   purple: 'text-purple-700 dark:text-purple-300 hover:bg-purple-100 dark:hover:bg-purple-900/40',
@@ -70,7 +82,7 @@ export default function Dashboard() {
       <div className="mb-6">
         <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Panel Principal</h2>
         <p className="text-gray-500 dark:text-gray-400 mt-1">
-          Sistema de gestion para clinica medica privada
+          Sistema de gestión para clínica médica privada
         </p>
       </div>
 
@@ -97,7 +109,7 @@ export default function Dashboard() {
       </div>
 
       <div className="mt-8 p-4 bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg text-sm text-gray-500 dark:text-gray-400">
-        <strong>API:</strong> PostgreSQL (citas, facturas, pagos) + MongoDB (historiales clinicos) |{' '}
+        <strong>API:</strong> PostgreSQL (citas, facturas, pagos) + MongoDB (historiales clínicos) |{' '}
         <strong>Formato respuesta:</strong> {'{ success, data, error }'}
       </div>
     </div>

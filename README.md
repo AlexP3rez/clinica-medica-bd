@@ -7,6 +7,7 @@ Sistema de gestion para clinica medica privada. Backend Node.js/Express con Post
 - **Node.js** 18+
 - **PostgreSQL** (puerto por defecto: 5432, configurable)
 - **MongoDB** (local o Atlas)
+- **Docker** (opcional, para ejecutar scripts de backup)
 
 ## Instalacion
 
@@ -41,7 +42,19 @@ Variables disponibles:
 
 ## Base de datos
 
-La aplicacion **no crea las tablas** ni los objetos de base de datos. Estos deben existir previamente en PostgreSQL:
+### Creacion de la base de datos (PostgreSQL)
+
+Los scripts SQL en `DB/` permiten recrear la base de datos completa desde cero. Ejecutar en orden:
+
+| Orden | Archivo | Contenido |
+|-------|---------|-----------|
+| 1 | `DB/clinica_db_01.sql` | Schema completo: tablas, constraints, enums |
+| 2 | `DB/clinica_db_02.sql` | Funciones almacenadas |
+| 3 | `DB/clinica_db_03.sql` | Stored procedures |
+| 4 | `DB/clinica_db_04.sql` | Vistas y vistas materializadas |
+| 5 | `DB/clinica_db_05.sql` | Datos de prueba (seed PostgreSQL) |
+
+El diagrama Entidad-Relacion se encuentra en `DB/DER_Clinica_privada.pdf`.
 
 ### Funciones y procedimientos almacenados
 
@@ -57,8 +70,8 @@ La aplicacion **no crea las tablas** ni los objetos de base de datos. Estos debe
 
 | Tipo | Nombre | Usado por |
 |------|--------|-----------|
-| Vista | `v_agenda_diaria` | Reportes (definida, sin ruta activa) |
-| Vista | `v_facturas_pendientes` | Reportes (definida, sin ruta activa) |
+| Vista | `v_agenda_diaria` | Reportes: agenda diaria |
+| Vista | `v_facturas_pendientes` | Reportes: facturas pendientes |
 | Vista materializada | `vm_ranking_trimestral_medicos` | Ranking de medicos |
 | Vista materializada | `vm_facturacion_mensual` | Facturacion mensual |
 
@@ -68,7 +81,16 @@ La aplicacion usa la coleccion `historiales_clinicos` en la base de datos MongoD
 
 ## Datos de prueba (seed)
 
-Solo existe seed para MongoDB (150 historiales clinicos falsos):
+### PostgreSQL
+
+```bash
+# Ejecutar el script SQL directamente en PostgreSQL:
+psql -U <usuario> -d clinica_db -f DB/clinica_db_05.sql
+```
+
+Inserta datos de prueba en las tablas transaccionales: especialidades, medicos, pacientes, citas, facturas, pagos, horarios y log_auditoria.
+
+### MongoDB (150 historiales clinicos falsos)
 
 ```bash
 node src/seed/seed_mongo.js
@@ -79,8 +101,6 @@ node src/seed/seed_mongo.js
 > npm install @faker-js/faker
 > ```
 > El seed ejecuta `process.exit(0)` al terminar, por lo que debe ejecutarse como script independiente, no con `npm run`.
-
-**No existe seed para PostgreSQL** — los datos transaccionales (citas, facturas, pagos) deben insertarse via API o manualmente.
 
 ## Ejecucion
 
@@ -113,9 +133,31 @@ Todos los endpoints responden con el formato:
 
 | Metodo | Ruta | Body / Query | Descripcion |
 |--------|------|-------------|-------------|
+| `GET` | `/citas` | — | Listar todas las citas |
+| `GET` | `/citas/:id` | — | Obtener cita por ID |
 | `POST` | `/citas` | `{ paciente_id, medico_id, fecha, hora }` | Crear cita (valida disponibilidad) |
 | `PUT` | `/citas/:id/cancelar` | `{ motivo, usuario }` | Cancelar cita |
+| `PUT` | `/citas/:id/estado` | `{ estado, usuario }` | Cambiar estado (confirmada, atendida, no_asistio) |
 | `GET` | `/citas/horarios-libres` | `?medico_id=&fecha=` | Horarios disponibles del medico |
+
+### Pacientes
+
+| Metodo | Ruta | Body / Query | Descripcion |
+|--------|------|-------------|-------------|
+| `GET` | `/pacientes` | — | Listar todos los pacientes |
+| `POST` | `/pacientes` | `{ dpi, nombres, apellidos, fecha_nacimiento, ... }` | Crear paciente |
+| `PUT` | `/pacientes/:id` | `{ dpi, nombres, apellidos, fecha_nacimiento, ... }` | Actualizar paciente |
+
+### Medicos
+
+| Metodo | Ruta | Body / Query | Descripcion |
+|--------|------|-------------|-------------|
+| `GET` | `/medicos` | — | Listar todos los medicos |
+| `GET` | `/medicos/:id` | — | Obtener medico por ID |
+| `GET` | `/medicos/:id/horarios` | — | Horarios semanales del medico |
+| `POST` | `/medicos` | `{ especialidad_id, nombres, apellidos, numero_colegiado, ... }` | Crear medico |
+| `PUT` | `/medicos/:id` | `{ especialidad_id, nombres, apellidos, numero_colegiado, ... }` | Actualizar medico |
+| `POST` | `/medicos/:id/horarios` | `{ horarios: [...] }` | Crear o actualizar horarios del medico |
 
 ### Pagos
 
@@ -123,6 +165,25 @@ Todos los endpoints responden con el formato:
 |--------|------|-------------|-------------|
 | `POST` | `/pagos` | `{ factura_id, monto, usuario }` | Registrar pago |
 | `GET` | `/pagos/saldo/:paciente_id` | — | Saldo pendiente del paciente |
+
+### Facturas
+
+| Metodo | Ruta | Body / Query | Descripcion |
+|--------|------|-------------|-------------|
+| `GET` | `/facturas` | — | Listar todas las facturas |
+| `POST` | `/facturas` | `{ cita_id, servicios: [{ servicio_id, cantidad }] }` | Crear factura con detalle |
+
+### Servicios
+
+| Metodo | Ruta | Body / Query | Descripcion |
+|--------|------|-------------|-------------|
+| `GET` | `/servicios` | — | Listar servicios disponibles |
+
+### Especialidades
+
+| Metodo | Ruta | Body / Query | Descripcion |
+|--------|------|-------------|-------------|
+| `GET` | `/especialidades` | — | Listar especialidades medicas |
 
 ### Historiales Clinicos (MongoDB)
 
@@ -137,6 +198,8 @@ Todos los endpoints responden con el formato:
 |--------|------|-------|-------------|
 | `GET` | `/reportes/ranking-medicos` | — | Ranking trimestral de medicos (PostgreSQL) |
 | `GET` | `/reportes/facturacion-mensual` | — | Facturacion mensual (PostgreSQL) |
+| `GET` | `/reportes/agenda-diaria` | — | Agenda diaria de citas (PostgreSQL) |
+| `GET` | `/reportes/facturas-pendientes` | — | Facturas pendientes de pago (PostgreSQL) |
 | `GET` | `/reportes/top-diagnosticos` | `?fecha_inicio=` | Top 5 diagnosticos por especialidad (MongoDB) |
 | `GET` | `/reportes/medicamentos-por-especialidad` | — | Medicamentos por especialidad con % (MongoDB) |
 | `GET` | `/reportes/analisis-avanzado` | — | Signos vitales por edad + intervalos entre consultas (MongoDB) |
@@ -183,17 +246,77 @@ GET /health → { success: true, data: { status: "ok" }, error: null }
 }
 ```
 
+## Respaldo y Recuperacion
+
+Scripts de backup para PostgreSQL en `scripts_backup/`:
+
+| Archivo | Descripcion | Frecuencia |
+|---------|-------------|------------|
+| `backup_full.sh` | Backup completo con `pg_dump -Fc` | Semanal (domingos 2 AM) |
+| `backup_incremental.sh` | Backup incremental (tablas transaccionales) | Cada 6 horas |
+| `politica_retencion.md` | Politica de retencion y RPO/RTO | — |
+
+Los scripts asumen PostgreSQL corriendo en un contenedor Docker llamado `postgres-db`. Ajustar variables en los scripts segun el entorno.
+
+**Metricas de Disaster Recovery:**
+- **RPO (Recovery Point Objective):** Maximo 6 horas de perdida de datos
+- **RTO (Recovery Time Objective):** Minutos (restauracion agil con archivos limitados y ordenados)
+- **Retencion:** Backups full por 4 semanas, incrementales por 7 dias
+
+## Documentacion
+
+Documentacion adicional del proyecto en `DOCS/`:
+
+| Archivo | Contenido |
+|---------|-----------|
+| `Análisis de Performance y Optimización.pdf` | Analisis con EXPLAIN ANALYZE, creacion de indices B-Tree y Bitmap |
+| `Decisiones de diseño.pdf` | Decisiones de arquitectura y diseño de la base de datos |
+| `Bitacora_IA.md` | Bitacora de uso de IA (Gemini / OpenCode) durante el desarrollo |
+
 ## Estructura del proyecto
 
 ```
 .
+├── DB/
+│   ├── clinica_db_01.sql         # Schema completo (tablas)
+│   ├── clinica_db_02.sql         # Funciones almacenadas
+│   ├── clinica_db_03.sql         # Stored procedures
+│   ├── clinica_db_04.sql         # Vistas y vistas materializadas
+│   ├── clinica_db_05.sql         # Datos de prueba PostgreSQL
+│   └── DER_Clinica_privada.pdf   # Diagrama Entidad-Relacion
+├── DOCS/
+│   ├── Análisis de Performance y Optimización.pdf
+│   ├── Bitacora_IA.md
+│   └── Decisiones de diseño.pdf
+├── scripts_backup/
+│   ├── backup_full.sh
+│   ├── backup_incremental.sh
+│   └── politica_retencion.md
 ├── src/
 │   ├── app.js                    # Entrada del servidor Express
 │   ├── config/
 │   │   ├── mongodb.js            # Conexion MongoDB (MongoClient nativo)
 │   │   └── postgres.js           # Pool PostgreSQL (pg)
 │   ├── controllers/              # Manejo de requests, validacion, respuestas
-│   ├── routes/                   # Definicion de rutas
+│   │   ├── citas.controller.js
+│   │   ├── especialidades.controller.js
+│   │   ├── facturas.controller.js
+│   │   ├── historiales.controller.js
+│   │   ├── medicos.controller.js
+│   │   ├── pacientes.controller.js
+│   │   ├── pagos.controller.js
+│   │   ├── reportes.controller.js
+│   │   └── servicios.controller.js
+│   ├── routes/                   # Definicion de rutas con express-validator
+│   │   ├── citas.routes.js
+│   │   ├── especialidades.routes.js
+│   │   ├── facturas.routes.js
+│   │   ├── historiales.routes.js
+│   │   ├── medicos.routes.js
+│   │   ├── pacientes.routes.js
+│   │   ├── pagos.routes.js
+│   │   ├── reportes.routes.js
+│   │   └── servicios.routes.js
 │   ├── services/
 │   │   ├── mongo.service.js      # CRUD y aggregations para historiales
 │   │   └── postgres.service.js   # Queries SQL y llamadas a funciones/SP
@@ -203,8 +326,21 @@ GET /health → { success: true, data: { status: "ok" }, error: null }
 │   ├── src/
 │   │   ├── main.jsx              # Entrada React (BrowserRouter + ThemeProvider)
 │   │   ├── api/                  # Cliente Axios y funciones por recurso
+│   │   │   ├── citas.api.js
+│   │   │   ├── historiales.api.js
+│   │   │   ├── maestros.api.js
+│   │   │   ├── pagos.api.js
+│   │   │   └── reportes.api.js
 │   │   ├── pages/                # Vistas organizadas por modulo
-│   │   ├── components/           # Layout, Alert, EmptyState, Loading
+│   │   │   ├── Dashboard.jsx
+│   │   │   ├── citas/            # CrearCita, CancelarCita, HorariosLibres
+│   │   │   ├── historiales/      # CrearHistorial, HistorialPaciente
+│   │   │   ├── medicos/          # Medicos (lista), NuevoMedico
+│   │   │   ├── pacientes/        # Pacientes (lista), NuevoPaciente
+│   │   │   ├── pagos/            # RegistrarPago, SaldoPaciente
+│   │   │   └── reportes/         # RankingMedicos, FacturacionMensual,
+│   │   │                          # AgendaDiaria, FacturasPendientes
+│   │   ├── components/           # Layout, Alert, EmptyState, Loading, SelectField
 │   │   └── context/              # ThemeContext (dark/light mode)
 │   └── vite.config.js            # Proxy /api → backend
 ├── .env.example
@@ -214,6 +350,7 @@ GET /health → { success: true, data: { status: "ok" }, error: null }
 
 ## Stack tecnologico
 
-- **Backend:** Node.js, Express v5, `pg` (driver nativo, sin ORM), `mongodb` (driver nativo)
+- **Backend:** Node.js, Express v5, `pg` (driver nativo, sin ORM), `mongodb` (driver nativo), `express-validator`
 - **Frontend:** React 18, Vite 5, Tailwind CSS 3, React Router 6, Axios
 - **Bases de datos:** PostgreSQL (transaccional) + MongoDB (historiales clinicos)
+- **Respaldo:** pg_dump + Docker + Cron (Linux)
